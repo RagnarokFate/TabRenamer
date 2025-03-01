@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Renamer</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Tab Renamer</h1>
+    
+    <div class="input-group">
+      <input type="text" id="tabName" placeholder="Enter new tab name">
+      <button id="renameBtn">Rename</button>
+    </div>
+    
+    <div class="options">
+      <div class="option">
+        <input type="checkbox" id="persistCheck">
+        <label for="persistCheck">Remember this name for this URL</label>
+      </div>
+    </div>
+    
+    <div class="recent-names">
+      <h2>Recent Names</h2>
+      <ul id="recentList"></ul>
+    </div>
+
+    <div class="saved-urls">
+      <h2>Saved URLs</h2>
+      <ul id="savedList"></ul>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
