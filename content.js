@@ -28,6 +28,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     isCustomTitle = false;
     stopObserving();
     sendResponse({ success: true });
+  } else if (message.action === 'promptRename') {
+    const currentTitle = isCustomTitle ? document.title : originalTitle;
+    const promptText = message.persist 
+      ? 'Enter new tab name (will be saved for this site):' 
+      : 'Enter new tab name:';
+    const newName = prompt(promptText, currentTitle);
+    if (newName !== null && newName.trim() !== '') {
+      const trimmedName = newName.trim();
+      if (!isCustomTitle) {
+        originalTitle = document.title;
+        isCustomTitle = true;
+      }
+      document.title = trimmedName;
+      startObserving();
+      setTimeout(() => { document.title = trimmedName; }, 50);
+      setTimeout(() => { document.title = trimmedName; }, 250);
+      chrome.runtime.sendMessage({ 
+        action: 'setTabName', 
+        tabId: null,
+        name: trimmedName 
+      }).catch(() => {});
+      
+      if (message.persist) {
+        const hostname = new URL(window.location.href).hostname;
+        chrome.storage.local.get(['savedUrls'], (data) => {
+          const savedUrls = data.savedUrls || {};
+          savedUrls[hostname] = trimmedName;
+          chrome.storage.local.set({ savedUrls });
+        });
+      }
+    }
+    sendResponse({ success: true });
   }
   return true;
 });
@@ -87,6 +119,7 @@ chrome.runtime.sendMessage({ action: 'checkSavedUrl', url: window.location.href 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && isCustomTitle) {
     chrome.runtime.sendMessage({ action: 'getTabName' }, (response) => {
+      if (chrome.runtime.lastError) return;
       if (response && response.name) {
         document.title = response.name;
       }
