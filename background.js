@@ -11,6 +11,29 @@ chrome.runtime.onInstalled.addListener(() => {
       chrome.storage.local.set({ savedUrls: {} });
     }
   });
+
+  chrome.contextMenus.create({
+    id: 'renameTab',
+    title: 'Rename this tab...',
+    contexts: ['page']
+  });
+  
+  chrome.contextMenus.create({
+    id: 'renameTabAndSave',
+    title: 'Rename and save for this site...',
+    contexts: ['page']
+  });
+});
+
+// Handle context menu click
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (!tab?.id) return;
+  
+  if (info.menuItemId === 'renameTab') {
+    chrome.tabs.sendMessage(tab.id, { action: 'promptRename', persist: false }).catch(() => {});
+  } else if (info.menuItemId === 'renameTabAndSave') {
+    chrome.tabs.sendMessage(tab.id, { action: 'promptRename', persist: true }).catch(() => {});
+  }
 });
 
 // Listen for tab URL changes to apply saved names
@@ -34,9 +57,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // When a tab is renamed, store the custom name
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'setTabName' && message.tabId && message.name) {
-    customTabNames.set(message.tabId, message.name);
-    sendResponse({ success: true });
+  if (message.action === 'setTabName' && message.name) {
+    const tabId = message.tabId || sender.tab?.id;
+    if (tabId) {
+      customTabNames.set(tabId, message.name);
+      sendResponse({ success: true });
+    }
   }
   return true;
 });

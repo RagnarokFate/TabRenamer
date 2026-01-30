@@ -24,7 +24,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   savedUrls = data.savedUrls || {};
   
   // Check if current URL has a saved name
-  const urlKey = new URL(currentTab.url).hostname;
+  let urlKey = '';
+  try {
+    urlKey = new URL(currentTab.url).hostname;
+  } catch {
+    // Invalid URL (e.g., chrome:// pages) - urlKey remains empty
+  }
   if (savedUrls[urlKey]) {
     persistCheck.checked = true;
   }
@@ -52,29 +57,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateRecentList();
     }
     
-    // Save to persistent URLs if checked
-    if (persistCheck.checked) {
+    // Save to persistent URLs if checked (only if urlKey is valid)
+    if (persistCheck.checked && urlKey) {
       savedUrls[urlKey] = newName;
       await chrome.storage.local.set({ savedUrls });
       updateSavedList();
-    } else if (savedUrls[urlKey]) {
+    } else if (urlKey && savedUrls[urlKey]) {
       delete savedUrls[urlKey];
       await chrome.storage.local.set({ savedUrls });
       updateSavedList();
     }
     
-    // Store the custom name in the background script
     chrome.runtime.sendMessage({ 
       action: 'setTabName', 
       tabId: currentTab.id, 
       name: newName 
-    });
+    }).catch(() => {});
     
-    // Send message to content script to rename the tab
     chrome.tabs.sendMessage(currentTab.id, { 
       action: 'renameTab', 
       name: newName 
-    });
+    }).catch(() => {});
   }
   
   // Clear all recent names
